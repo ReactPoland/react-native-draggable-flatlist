@@ -88,6 +88,7 @@ type Props<T> = Modify<
     autoscrollSpeed?: number;
     autoscrollThreshold?: number;
     data: T[];
+    onScrollY?: any;
     onRef?: (ref: React.RefObject<AnimatedFlatListType<T>>) => void;
     onDragBegin?: (index: number) => void;
     onRelease?: (index: number) => void;
@@ -96,6 +97,7 @@ type Props<T> = Modify<
     animationConfig: Partial<Animated.SpringConfig>;
     activationDistance?: number;
     debug?: boolean;
+    layoutInvalidationKey?: string;
   }
 >;
 
@@ -239,8 +241,12 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       const key = this.keyExtractor(item, index);
       this.keyToIndex.set(key, index);
     });
-    onRef && onRef(this.flatlistRef);
+    // onRef && onRef(this.flatlistRef);
   }
+
+  componentDidMount = () => {
+    this.props.onRef && this.props.onRef(this.flatlistRef);
+  };
 
   dataHasChanged = (a: T[], b: T[]) => {
     const lengthHasChanged = a.length !== b.length;
@@ -263,17 +269,30 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       this.updateCellData(this.props.data);
       onNextFrame(this.flushQueue);
 
-      if (this.dataHasChanged(prevProps.data, this.props.data)) {
+      const layoutInvalidationKeyHasChanged =
+        prevProps.layoutInvalidationKey !== this.props.layoutInvalidationKey;
+
+      if (
+        layoutInvalidationKeyHasChanged ||
+        this.dataHasChanged(prevProps.data, this.props.data)
+      ) {
         this.queue.push(() => this.measureAll(this.props.data));
       }
     }
 
     if (!prevState.activeKey && this.state.activeKey) {
       const index = this.keyToIndex.get(this.state.activeKey);
-      this.spacerIndex.setValue(index);
-      this.activeIndex.setValue(index);
-      const size = this.cellData.get(this.state.activeKey).measurements.size;
-      this.activeCellSize.setValue(size);
+      if (index !== undefined) {
+        this.spacerIndex.setValue(index);
+        this.activeIndex.setValue(index);
+        this.touchCellOffset.setValue(0);
+        this.isPressedIn.native.setValue(1);
+      }
+      const cellData = this.cellData.get(this.state.activeKey);
+      if (cellData) {
+        this.touchAbsolute.setValue(sub(cellData.offset, this.scrollOffset));
+        this.activeCellSize.setValue(cellData.measurements.size);
+      }
     }
   };
 
@@ -652,6 +671,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             this.scrollOffset,
             this.props.horizontal ? contentOffset.x : contentOffset.y
           ),
+          set(this.props.onScrollY, contentOffset.y),
           cond(
             and(
               this.isAutoscrolling.native,
@@ -903,7 +923,10 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
                 extraData={this.state}
                 keyExtractor={this.keyExtractor}
                 onScroll={this.onScroll}
-                scrollEventThrottle={1}
+                removeClippedSubviews={false}
+                scrollEventThrottle={16}
+                bounces={false}
+                snapToInterval={50}
               />
               {!!hoverComponent && this.renderHoverComponent()}
               {debug && this.renderDebug()}
