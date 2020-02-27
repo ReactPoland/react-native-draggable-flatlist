@@ -241,8 +241,21 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       const key = this.keyExtractor(item, index);
       this.keyToIndex.set(key, index);
     });
-    // onRef && onRef(this.flatlistRef);
   }
+
+  /**
+   * This ensures that rendered items will have an index on their first render.
+   */
+  shouldComponentUpdate = (nextProps: Props<T>, nextState) => {
+    if (nextProps.data !== this.props.data) {
+      nextProps.data.forEach((item, index) => {
+        const key = this.keyExtractor(item, index);
+        this.keyToIndex.set(key, index);
+      });
+    }
+
+    return true;
+  };
 
   componentDidMount = () => {
     this.props.onRef && this.props.onRef(this.flatlistRef);
