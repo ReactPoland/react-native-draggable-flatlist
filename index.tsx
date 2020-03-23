@@ -5,7 +5,8 @@ import {
   VirtualizedListProps,
   findNodeHandle,
   ViewStyle,
-  FlatList as RNFlatList
+  FlatList as RNFlatList,
+  RefreshControl
 } from "react-native";
 import {
   PanGestureHandler,
@@ -98,6 +99,8 @@ type Props<T> = Modify<
     activationDistance?: number;
     debug?: boolean;
     layoutInvalidationKey?: string;
+    refreshing?: boolean;
+    onRefresh?: () => void;
   }
 >;
 
@@ -684,7 +687,9 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             this.scrollOffset,
             this.props.horizontal ? contentOffset.x : contentOffset.y
           ),
-          set(this.props.onScrollY, contentOffset.y),
+          cond(greaterOrEq(contentOffset.y, 0), [
+            set(this.props.onScrollY, contentOffset.y)
+          ]),
           cond(
             and(
               this.isAutoscrolling.native,
@@ -938,8 +943,16 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
                 onScroll={this.onScroll}
                 removeClippedSubviews={false}
                 scrollEventThrottle={16}
-                bounces={false}
                 snapToInterval={50}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={this.props.refreshing || false}
+                    onRefresh={
+                      this.props.onRefresh ? this.props.onRefresh : () => {}
+                    }
+                    tintColor={"#31314F"}
+                  />
+                }
               />
               {!!hoverComponent && this.renderHoverComponent()}
               {debug && this.renderDebug()}
