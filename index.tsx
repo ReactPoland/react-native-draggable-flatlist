@@ -947,8 +947,8 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
                 refreshControl={
                   <RefreshControl
                     refreshing={this.props.refreshing || false}
-                    onRefresh={
-                      this.props.onRefresh ? this.props.onRefresh : () => {}
+                    onRefresh={() =>
+                      !!this.props.onRefresh ? this.props.onRefresh() : () => {}
                     }
                     tintColor={"#31314F"}
                   />
