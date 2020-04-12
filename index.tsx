@@ -100,6 +100,7 @@ type Props<T> = Modify<
     debug?: boolean;
     layoutInvalidationKey?: string;
     refreshing?: boolean;
+    isEditable?: boolean;
     onRefresh?: () => void;
   }
 >;
@@ -945,13 +946,17 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
                 scrollEventThrottle={16}
                 snapToInterval={50}
                 refreshControl={
-                  <RefreshControl
-                    refreshing={this.props.refreshing || false}
-                    onRefresh={() =>
-                      !!this.props.onRefresh ? this.props.onRefresh() : () => {}
-                    }
-                    tintColor={"#31314F"}
-                  />
+                  this.props.isEditable ? null : (
+                    <RefreshControl
+                      refreshing={this.props.refreshing || false}
+                      onRefresh={() =>
+                        !!this.props.onRefresh
+                          ? this.props.onRefresh()
+                          : () => {}
+                      }
+                      tintColor={"#31314F"}
+                    />
+                  )
                 }
               />
               {!!hoverComponent && this.renderHoverComponent()}
