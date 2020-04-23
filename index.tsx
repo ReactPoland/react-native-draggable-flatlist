@@ -302,7 +302,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
       if (index !== undefined) {
         this.spacerIndex.setValue(index);
         this.activeIndex.setValue(index);
-        this.touchCellOffset.setValue(0);
+        this.touchCellOffset.setValue(-27);
         this.isPressedIn.native.setValue(1);
       }
       const cellData = this.cellData.get(this.state.activeKey);
@@ -795,11 +795,12 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   ]);
 
   runHoverClock = cond(clockRunning(this.hoverClock), [
-    spring(this.hoverClock, this.hoverAnimState, this.hoverAnimConfig),
+    set(this.hoverAnimState.finished, 1),
+    // spring(this.hoverClock, this.hoverAnimState, this.hoverActiveAnimConfig),
     cond(eq(this.hoverAnimState.finished, 1), [
       stopClock(this.hoverClock),
       call(this.moveEndParams, this.onDragEnd),
-      this.resetHoverSpring,
+      // this.resetHoverSpring,
       set(this.hasMoved, 0)
     ]),
     this.hoverAnimState.position
