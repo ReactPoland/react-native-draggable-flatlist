@@ -688,9 +688,11 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
             this.scrollOffset,
             this.props.horizontal ? contentOffset.x : contentOffset.y
           ),
-          cond(greaterOrEq(contentOffset.y, 0), [
-            set(this.props.onScrollY, contentOffset.y)
-          ]),
+          cond(
+            greaterOrEq(contentOffset.y, 0),
+            [set(this.props.onScrollY, contentOffset.y)],
+            set(this.props.onScrollY, 0)
+          ),
           cond(
             and(
               this.isAutoscrolling.native,
