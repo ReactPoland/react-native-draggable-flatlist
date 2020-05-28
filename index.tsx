@@ -67,6 +67,8 @@ const debugGestureState = (state, context) => {
   console.log(`## ${context} debug gesture state: ${state} - ${stateStr}`);
 };
 
+let timeoutId;
+
 type AnimatedFlatListType<T> = { getNode: () => RNFlatList<T> };
 
 export type DragEndParams<T> = {
@@ -101,6 +103,7 @@ type Props<T> = Modify<
     layoutInvalidationKey?: string;
     refreshing?: boolean;
     isEditable?: boolean;
+    spinnerColor?: string;
     onRefresh?: () => void;
   }
 >;
@@ -108,6 +111,7 @@ type Props<T> = Modify<
 type State = {
   activeKey: string | null;
   hoverComponent: React.ReactNode | null;
+  allowMount: boolean;
 };
 
 type CellData = {
@@ -135,7 +139,8 @@ function onNextFrame(callback: () => void) {
 class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   state = {
     activeKey: null,
-    hoverComponent: null
+    hoverComponent: null,
+    allowMount: false
   };
 
   fl: FlatList<any>;
@@ -263,8 +268,12 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   componentDidMount = () => {
     this.props.onRef && this.props.onRef(this.flatlistRef);
+    timeoutId = setTimeout(() => this.setState({ allowMount: true }), 1000);
   };
 
+  componentWillUnmount = () => {
+    clearTimeout(timeoutId);
+  };
   dataHasChanged = (a: T[], b: T[]) => {
     const lengthHasChanged = a.length !== b.length;
     if (lengthHasChanged) return true;
@@ -918,6 +927,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
         ? { activeOffsetX: activeOffset }
         : { activeOffsetY: activeOffset };
     }
+
     return (
       <TapGestureHandler
         ref={this.tapGestureHandlerRef}
@@ -949,11 +959,17 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
                 scrollEventThrottle={16}
                 snapToInterval={50}
                 refreshControl={
-                  <DelayRefreshControl
-                    isEditable={this.props.isEditable}
-                    refreshing={this.props.refreshing}
-                    onRefresh={this.props.onRefresh}
-                  />
+                  this.state.allowMount && (
+                    <RefreshControl
+                      refreshing={this.props.refreshing || false}
+                      onRefresh={() =>
+                        !!this.props.onRefresh
+                          ? this.props.onRefresh()
+                          : () => {}
+                      }
+                      tintColor={this.props.spinnerColor || "#31314F"}
+                    />
+                  )
                 }
               />
               {!!hoverComponent && this.renderHoverComponent()}
@@ -965,23 +981,6 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     );
   }
 }
-
-const DelayRefreshControl = props => {
-  const [allowMount, setAllowMount] = useState(false);
-  useEffect(() => {
-    const timeoutId = setTimeout(() => setAllowMount(true), 1000);
-    return () => clearTimeout(timeoutId);
-  }, []);
-
-  if (!allowMount) return null;
-  return props.isEditable ? null : (
-    <RefreshControl
-      refreshing={props.refreshing || false}
-      onRefresh={() => (!!props.onRefresh ? props.onRefresh() : () => {})}
-      tintColor={"#31314F"}
-    />
-  );
-};
 
 export default DraggableFlatList;
 
