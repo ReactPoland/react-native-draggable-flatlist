@@ -700,7 +700,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           cond(
             greaterOrEq(contentOffset.y, 0),
             [set(this.props.onScrollY, contentOffset.y)],
-            set(this.props.onScrollY, 0)
+            this.props.fullScrollY ? [set(this.props.onScrollY, contentOffset.y)] : set(this.props.onScrollY, 0)
           ),
           cond(
             and(
@@ -959,7 +959,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
                 scrollEventThrottle={16}
                 snapToInterval={50}
                 refreshControl={
-                  this.state.allowMount && (
+                  this.state.allowMount ? this.props.customRefreshControl ||
                     <RefreshControl
                       refreshing={this.props.refreshing || false}
                       onRefresh={() =>
@@ -969,7 +969,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
                       }
                       tintColor={this.props.spinnerColor || "#31314F"}
                     />
-                  )
+                    : null
                 }
               />
               {!!hoverComponent && this.renderHoverComponent()}
